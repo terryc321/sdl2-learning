@@ -1,0 +1,223 @@
+
+hello.c documentation
+
+/*
+
+getting started
+
+beauty about c programming is everybody has tutorials on how to do it
+
+then we can come in a stuff some lisp interpreter under the rug and leverage the capability of
+the application
+
+trying to write everything from lisp interpreter is the wrong approach as
+1 ) foreign function interface code too large
+2 ) simply not taking advantage of c library itself - only write bare minimum of lisp code
+
+https://glusoft.com/sdl2-tutorials/display-image-sdl_image/
+
+ */
+
+/*
+The first thing to do is initialize SDL, there are multiple modules in SDL :
+
+    SDL_INIT_TIMER – timer subsystem
+    SDL_INIT_AUDIO – audio subsystem
+    SDL_INIT_VIDEO – video subsystem; automatically initializes the events subsystem
+    SDL_INIT_JOYSTICK – joystick subsystem; automatically initializes the events subsystem
+    SDL_INIT_HAPTIC – haptic (force feedback) subsystem
+    SDL_INIT_GAMECONTROLLER – controller subsystem; automatically initializes the joystick subsystem
+    SDL_INIT_EVENTS – events subsystem
+    SDL_INIT_EVERYTHING – all of the above subsystems
+    SDL_INIT_NOPARACHUTE – compatibility; this flag is ignored
+
+In this tutorial we use SDL_INIT_VIDEO and SDL_INIT_EVENTS.
+*/
+
+/*
+library headers
+ */
+
+/* standard headers */
+
+go get SDL2_image library
+https://github.com/libsdl-org/SDL_image/releases
+- download it - untar it -
+./configure
+make
+sudo make install
+
+now we have SDL2_image
+
+Next thing, the initilization of SDL_image with IMG_Init
+
+The flags for IMG_init are:
+
+    IMG_INIT_JPG
+    IMG_INIT_PNG
+    IMG_INIT_TIF
+    IMG_INIT_WEBP
+
+After that, we initialize the format PNG:
+
+https://wiki.libsdl.org/SDL2_image/IMG_Init
+terry@debian:~/code/sdl2-learning/001-unknown$ bash build.sh && ./hello
+/usr/bin/ld: /tmp/cc8Qmmw0.o: in function `sdl_image_init':
+hello.c:(.text+0xe): undefined reference to `IMG_Init'
+collect2: error: ld returned 1 exit status
+terry@debian:~/code/sdl2-learning/001-unknown$
+
+forgot to include SDL2_image library in the compilation step to make executable
+
+# weird
+# sdl2 library is lowercase sdl2
+# sdl2-image library is uppercase SDL2_image 
+gcc -o hello hello.c \
+    `pkg-config --cflags --libs guile-3.0`\
+    `pkg-config --cflags --libs sdl2`\
+    `pkg-config --cflags --libs SDL2_image`\
+
+now we can build and run hello lisp interpreter with hooks into sdl and sdl2-image libraries
+which then runs hello.scm guile file - now starting to get access to power of lisp
+> bash build.sh && time ./hello hello.scm
+
+now lets make a window
+
+The window
+
+After the initialization, we create the window:
+
+    SDL_Window* window = SDL_CreateWindow("First program", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_OPENGL);
+    if (window == NULL) {
+        std::cout << "Error window creation";
+        return 3;
+    }
+
+The first parameter is the name of the program.
+The second parameter indicate the horizontal position of the window.
+
+The third parameters indicate the vertical position of the window. You have two choice for the position of the window:
+
+    SDL_WINDOWPOS_CENTERED – position centered
+    SDL_WINDOWPOS_UNDEFINED – don’t care about the position
+
+The fourth parameter is the width of the window.
+
+The fifth is the height of the window.
+
+The sixth is a flag to specify the mode of the window:
+
+    SDL_WINDOW_FULLSCREEN – fullscreen window
+    SDL_WINDOW_OPENGL – the window usable with OpenGL context
+    SDL_WINDOW_SHOWN – the window is shown (ignored by SDL_CreateWindow)
+    SDL_WINDOW_HIDDEN – the window is not visible
+    SDL_WINDOW_BORDERLESS – the window have no decoration
+    SDL_WINDOW_RESIZABLE – the window is resizable
+    SDL_WINDOW_MINIMIZED – the window is minimized
+    SDL_WINDOW_MAXIMIZED – the window is maximized
+    SDL_WINDOW_INPUT_GRABBED – the window has grabbed input focus
+    SDL_WINDOW_INPUT_FOCUS – the window has input focus
+    SDL_WINDOW_MOUSE_FOCUS – the window has mouse focus
+    SDL_WINDOW_FULLSCREEN_DESKTOP – ( SDL_WINDOW_FULLSCREEN | 0x00001000 )
+    SDL_WINDOW_FOREIGN – the window not created by SDL
+    SDL_WINDOW_ALLOW_HIGHDPI – the window created in high dpi mode
+    SDL_WINDOW_MOUSE_CAPTURE -the window has mouse captured (unrelated to INPUT_GRABBED)
+    SDL_WINDOW_ALWAYS_ON_TOP – the window should always be above others
+    SDL_WINDOW_SKIP_TASKBAR – the window is not added to the taskbar
+    SDL_WINDOW_UTILITY – the window is a utility window
+    SDL_WINDOW_TOOLTIP – the window is a tooltip
+    SDL_WINDOW_POPUP_MENU – the window is a popup menu
+    SDL_WINDOW_VULKAN – the window usable for Vulkan surface
+
+
+ SDL_Window* window = SDL_CreateWindow("First program", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_OPENGL);
+    if (window == NULL) {
+        std::cout << "Error window creation";
+        return 3;
+    }
+
+The renderer
+
+Next thing to do is render the texture, we need a renderer:
+
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (renderer == NULL) {
+        std::cout << "Error renderer creation";
+        return 4;
+    }
+
+
+The first parameter is the window where rendering occurs.
+
+The second parameter is the index of the rendering driver to initialize. If we set -1, the first driver to support the flags (next parameter) is initialized. The third parameter is the mode of the renderer:
+
+    SDL_RENDERER_SOFTWARE – The renderer is a software fallback
+    SDL_RENDERER_ACCELERATED – The renderer uses hardware acceleration
+    SDL_RENDERER_PRESENTVSYNC – Present is synchronized with the refresh rate
+    SDL_RENDERER_TARGETTEXTURE – The renderer supports rendering to textur
+
+
+IMG_Load take one parameter, the path of the file
+
+What is a SDL_Surface?
+An array of pixel stored in RAM encoded in a specific format, most of the time RGBA.
+
+Right, that is good, can we display the image?
+Well we can, but only if we use a software renderer, for that you need to use the function SDL_CreateSoftwareRenderer.
+Here the renderer use hardware acceleration
+
+    In computing, hardware acceleration is the use of computer hardware specially made to perform some functions more efficiently than is possible in software running on a general-purpose CPU.
+
+So the image need to be diplayed by the graphic card, not the CPU. To do that we need to create a texture.
+
+What is a SDL_Texture?
+An array of pixel stored in VRAM encoded in a driver-specific format
+
+We use OpenGL, so if you are interested check out the image formats used by OpenGL
+
+Then we create the texture:
+
+    SDL_Texture* lettuce_tex = SDL_CreateTextureFromSurface(renderer, lettuce_sur);
+    if (lettuce_tex == NULL) {
+        std::cout << "Error creating texture";
+        return 6;
+    }
+    
+    SDL_FreeSurface(lettuce_sur);
+
+The first parameter is the renderer.
+The second parameter is the surface to transform into a texture.
+
+After the texture creation, we do not need the surface anymore so we can free the memory with SDL_FreeSurface.
+The event loop for displaying an image with SDL_image
+
+For the program to continu running indefinitely, we some kind of an infinite loop => An infinite loop with an exit condition
+
+How about we use red the cross a the top right of the window as the exit condition. Sound good?
+
+But, to make this exit condition we need to know when the user click on the red cross.
+To catch the action “clicking on the red cross” we need to use events.
+
+    while (true) {
+        SDL_Event e;
+        if (SDL_WaitEvent(&e)) {
+            if (e.type == SDL_QUIT) {
+                break;
+            }
+        }
+
+So we begin with a SDL_Event e, but the event is empty.
+
+We need to fill this event with the actions of the user. For instance, we use SDL_WaitEvent to fill the event.
+This function wait indefinitely for an event to happen, if the event happen we fill the event and the loop continu.
+
+So if we do nothing, then the loop stops?
+Exactly, so for a game with some animations we will use SDL_PollEvent instead of SDL_WaitEvent because SDL_PollEvent suspend the loop.
+
+In this case, we have only one image, so we can render the image once and wait for the user to exit the program.
+
+But how can the image can be render if we block the loop at the second line of the loop ?
+
+That’s simple, even if we do nothing (no key press, no mouse click…) some event still occurs such as SDL_WINDOWEVENT, when the window shows up.
+
+
