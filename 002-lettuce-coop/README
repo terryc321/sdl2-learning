@@ -1,0 +1,14 @@
+
+
+trying to change window title text from another geiser process
+
+have coop-repl-server up and running
+
+c code calls scheme routine get-title
+
+so thought if i redefine get-title
+(define (get-title) "my new title")
+
+possibly need to look get-title up again , reset it so if it gets
+redefined i get the latest version perhaps
+
